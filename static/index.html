@@ -1,0 +1,68 @@
+<html>
+<head>
+    <style>
+    button {
+        display: block;
+    }
+
+    pre {
+        font-size: xx-large;
+    }
+    </style>
+</head>
+<body>
+    <script>
+    let socket = null;
+    function connect() {
+        socket = new WebSocket("ws://localhost:8000/ws/");
+        socket.addEventListener("open", (event) => {
+            console.log('socket connected');
+        });
+
+        socket.addEventListener("close", (event) => {
+            console.log('socket disconnected - reconnecting');
+            connect();
+        });
+
+        socket.addEventListener("message", (event) => {
+            if (event.data) {
+                const payload = JSON.parse(event.data);
+                console.log('updated message:', payload.message);
+                const el = document.getElementById('live');
+                el.innerText = payload.message;
+
+                const statusel = document.getElementById('status');
+                statusel.innerText = payload.sign_connected ? 'connected' : 'disconnected';
+            }
+        });
+    }
+
+    connect();
+
+    function onSubmit() {
+        const textArea = document.querySelector('textarea');
+        const message = textArea.value;
+        fetch('http://localhost:8000/message/', {
+            method: 'POST',
+            headers: {
+                'Content-type' : 'application/json',
+            },
+            body: JSON.stringify({
+                content: message,
+            }),
+        });
+    }
+    </script>
+
+    <textarea placeholder="Your message here" rows="5" cols="80"></textarea>
+    <button onclick="onSubmit()">
+        Submit
+    </button>
+
+    <p>Sign status: <span id="status"></span></p>
+
+    <p>Currently displaying:</p>
+
+    <pre id="live"></pre>
+</body>
+</html>
