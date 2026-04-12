@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import time
 import json
 import asyncio
 from pydantic import BaseModel
@@ -51,6 +52,7 @@ async def websocket_endpoint(websocket: WebSocket, sign: bool | None = None):
         state.version += 1
     await websocket.accept()
     last_version = -1
+    last_ping = 0
     while True:
         try:
             # TODO - replace this with a queue/notification system
@@ -62,8 +64,10 @@ async def websocket_endpoint(websocket: WebSocket, sign: bool | None = None):
                 await websocket.send_json(payload)
                 last_version = state.version
             # TODO - hack
-            await asyncio.sleep(1)
-            await websocket.send_text('')
+            await asyncio.sleep(0.25)
+            if time.time() - last_ping >= 5:
+                await websocket.send_text('')
+                last_ping = time.time()
         except WebSocketDisconnect:
             break
     if sign:
