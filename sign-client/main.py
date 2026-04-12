@@ -8,6 +8,7 @@ from websockets.exceptions import (
     ConnectionClosedError,
     InvalidMessage,
 )
+from serial import SerialException
 
 import site
 site.addsitedir('../py-pl-m2014r')
@@ -15,14 +16,15 @@ from plm2014r import Sign, NoResponse
 
 
 async def serve():
+    sign = Sign('/dev/ttyUSB0', retries=20)
+    sign.wakeup()
     async with connect("ws://localhost:8000/ws/?sign=true") as websocket:
-        sign = Sign('/dev/ttyUSB0', retries=20)
-        sign.wakeup()
         sign.set_message('<FC>Connected')
         time.sleep(2)
         while True:
             data = await websocket.recv()
             if not data:
+                sign.wakeup()
                 # Ping event
                 continue
             payload = json.loads(data)
@@ -36,13 +38,13 @@ async def main():
             await serve()
         except NoResponse:
             print('Sign not responding... retrying')
-            time.sleep(1)
         except (ConnectionClosedError, InvalidMessage):
             print('Connection closed... re-connecting')
-            time.sleep(1)
-        except ConnectionRefusedError:
+        except (ConnectionRefusedError, TimeoutError):
             print('Could not reach server... retrying')
-            time.sleep(1)
+        except (FileNotFoundError, SerialException):
+            print('Could not find serial device... retrying')
+        time.sleep(1)
 
 
 if __name__ == "__main__":
