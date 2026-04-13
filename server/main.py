@@ -6,7 +6,6 @@ import asyncio
 from pydantic import BaseModel
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -42,7 +41,6 @@ class PostMessage(BaseModel):
 
 
 app = FastAPI()
-app.mount('/static/', StaticFiles(directory='static'), name='static')
 
 CORS_ORIGINS = [
     'http://localhost:5173',
@@ -58,7 +56,7 @@ app.add_middleware(
 
 @app.get("/")
 def index():
-    return RedirectResponse('/static/index.html')
+    return ''
 
 
 @app.post('/message/')
