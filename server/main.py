@@ -57,6 +57,14 @@ def get_message():
     return state.message
 
 
+
+def make_payload():
+    return {
+        'message' : state.message + '       ',
+        'sign_connected' : bool(state.sign_clients),
+    }
+
+
 @app.websocket("/ws/")
 async def websocket_endpoint(websocket: WebSocket, sign: bool | None = None):
     if sign:
@@ -70,17 +78,14 @@ async def websocket_endpoint(websocket: WebSocket, sign: bool | None = None):
         try:
             # TODO - replace this with a queue/notification system
             if state.version != last_version:
-                payload = {
-                    'message' : state.message + '       ',
-                    'sign_connected' : bool(state.sign_clients),
-                }
-                await websocket.send_json(payload)
+                await websocket.send_json(make_payload())
                 last_version = state.version
-            # TODO - hack
+            else:
+                # TODO - hack
+                if time.time() - last_ping >= 5:
+                    await websocket.send_json(make_payload())
+                    last_ping = time.time()
             await asyncio.sleep(0.25)
-            if time.time() - last_ping >= 5:
-                await websocket.send_json({})
-                last_ping = time.time()
         except WebSocketDisconnect:
             break
     if sign:

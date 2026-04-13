@@ -23,13 +23,12 @@ async def serve():
         time.sleep(2)
         while True:
             data = await websocket.recv()
-            if not data:
-                sign.wakeup()
-                # Ping event
-                continue
             payload = json.loads(data)
-            print('message update:', payload)
-            sign.set_message(payload['message'])
+            try:
+                message = payload['message']
+                sign.set_message(message)
+            except KeyError:
+                sign.wakeup()
 
 
 async def main():
