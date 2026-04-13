@@ -4,4 +4,6 @@ body {
     background: var(--color-background);
     font-family: arial;
     color: var(--color-text);
+    padding: 0;
+    margin: 0;
 }

@@ -7,13 +7,10 @@ const preview = ref('');
 
 function useWebSocket(url: string) {
     const socket = new WebSocket(url);
-    const messages = ref([]);
     const lastMessage = ref('');
 
     socket.onmessage = (event) => {
-        console.log('message', event.data);
         lastMessage.value = JSON.parse(event.data);
-        // messages.value.push(JSON.parse(event.data));
     }
     socket.onclose = () => {
         console.warn('WebSocket closed... reconnecting')
@@ -22,14 +19,13 @@ function useWebSocket(url: string) {
     socket.onerror = (err) => {
         console.error('WebSocket error:', err)
     }
-
     const send = (msg) => {
         if (socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify(msg));
         }
     }
     onUnmounted(() => socket.close());
-    return { messages, send, lastMessage };
+    return { send, lastMessage };
 }
 
 const { lastMessage } = useWebSocket('http://localhost:8000/ws/');
@@ -58,23 +54,23 @@ function onPost() {
 </script>
 
 <template>
+    <div v-if="!connected" class="disconnected">
+        Warning: sign not disconnected
+    </div>
+
     <main>
-        <textarea
-            placeholder="Your message here"
-            rows="5"
-            cols="80"
-            v-model="message">
-        </textarea>
-
-        <button @click="onPost()">
-            Submit
-        </button>
-
-        <p>Sign status: {{ connected ? 'connected' : 'disconnected' }}</p>
-
-        <p>Currently displaying:</p>
+        <p>Sign is currently displaying:</p>
 
         <pre>{{ preview }}</pre>
+
+        <div class="input-area">
+            <textarea placeholder="Your message here" v-model="message">
+            </textarea>
+
+            <button @click="onPost()">
+                Submit
+            </button>
+        </div>
     </main>
 </template>
 
@@ -84,7 +80,51 @@ button {
     font-size: larger;
 }
 
+textarea {
+    display: block;
+    width: 100%;
+    height: 10em;
+    box-sizing: border-box;
+    border: solid 1px gray;
+    padding: 1em;
+    margin-bottom: 1em;
+}
+
 pre {
     font-size: xx-large;
+    width: 100%;
+    border: solid 1px gray;
+    padding: 0.5em;
+    box-sizing: border-box;
+    background: #444;
+    color: orange;
+    font-weight: bold;
+}
+
+main {
+    margin: 1em;
+}
+
+.disconnected {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2em;
+    font-style: italic;
+    background: #a00000;
+    color: white;
+    padding: 0.5em;
+    font-weight: bold;
+}
+
+.input-area {
+    position: absolute;
+    bottom: 0.5em;
+    left: 1em;
+    right: 1em;
 }
 </style>
