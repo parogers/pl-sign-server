@@ -26,11 +26,9 @@ class State:
 
     def add_sign_client(self, websocket):
         self.sign_clients.add(id(websocket))
-        self.version += 1
 
     def remove_sign_client(self, websocket):
         self.sign_clients.remove(id(websocket))
-        self.version += 1
 
 
 state = State()
@@ -71,11 +69,13 @@ def get_message():
 
 
 
-def make_payload():
-    return {
-        'message' : state.message + '       ',
+def make_payload(include_message=True):
+    payload = {
         'sign_connected' : bool(state.sign_clients),
     }
+    if include_message:
+        payload['message'] = state.message + '       '
+    return payload
 
 
 @app.websocket("/ws/")
@@ -95,7 +95,7 @@ async def websocket_endpoint(websocket: WebSocket, sign: bool | None = None):
             else:
                 # TODO - hack
                 if time.time() - last_ping >= 5:
-                    await websocket.send_json(make_payload())
+                    await websocket.send_json(make_payload(include_message=False))
                     last_ping = time.time()
             await asyncio.sleep(0.25)
         except WebSocketDisconnect:
