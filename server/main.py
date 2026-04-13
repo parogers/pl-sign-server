@@ -79,7 +79,7 @@ async def websocket_endpoint(websocket: WebSocket, sign: bool | None = None):
             # TODO - hack
             await asyncio.sleep(0.25)
             if time.time() - last_ping >= 5:
-                await websocket.send_text('')
+                await websocket.send_json({})
                 last_ping = time.time()
         except WebSocketDisconnect:
             break
