@@ -7,6 +7,7 @@ from websockets.asyncio.client import connect
 from websockets.exceptions import (
     ConnectionClosedError,
     InvalidMessage,
+    InvalidStatus,
 )
 from serial import SerialException
 
@@ -19,6 +20,7 @@ async def serve():
     sign = Sign('/dev/ttyUSB0', retries=20)
     sign.wakeup()
     async with connect("ws://localhost:8000/ws/?sign=true") as websocket:
+        print('Connected')
         sign.set_message('<FC>Connected')
         time.sleep(2)
         while True:
@@ -39,7 +41,7 @@ async def main():
             print('Sign not responding... retrying')
         except (ConnectionClosedError, InvalidMessage):
             print('Connection closed... re-connecting')
-        except (ConnectionRefusedError, TimeoutError):
+        except (ConnectionRefusedError, TimeoutError, InvalidStatus):
             print('Could not reach server... retrying')
         except (FileNotFoundError, SerialException):
             print('Could not find serial device... retrying')
