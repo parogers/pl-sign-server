@@ -18,6 +18,22 @@ class State:
     def __init__(self):
         self.sign_clients = set()
 
+    def set_message(self, msg):
+        self.message = msg
+        self.version += 1
+
+    def has_changed(self, old_version):
+        return self.version != old_version
+
+    def add_sign_client(self, websocket):
+        self.sign_clients.add(id(websocket))
+        self.version += 1
+
+    def remove_sign_client(self, websocket):
+        self.sign_clients.remove(id(websocket))
+        self.version += 1
+
+
 state = State()
 
 
@@ -47,8 +63,7 @@ def index():
 
 @app.post('/message/')
 def post_message(message: PostMessage):
-    state.message = message.content
-    state.version += 1
+    state.set_message(message.content)
     return message
 
 
@@ -69,15 +84,14 @@ def make_payload():
 async def websocket_endpoint(websocket: WebSocket, sign: bool | None = None):
     if sign:
         print('Sign has connected')
-        state.sign_clients.add(id(websocket))
-        state.version += 1
+        state.add_sign_client(websocket)
     await websocket.accept()
     last_version = -1
     last_ping = 0
     while True:
         try:
             # TODO - replace this with a queue/notification system
-            if state.version != last_version:
+            if state.has_changed(last_version):
                 await websocket.send_json(make_payload())
                 last_version = state.version
             else:
@@ -90,5 +104,5 @@ async def websocket_endpoint(websocket: WebSocket, sign: bool | None = None):
             break
     if sign:
         print('Sign has disconnected')
-        state.sign_clients.remove(id(websocket))
+        state.remove_sign_client(websocket)
         state.version += 1
