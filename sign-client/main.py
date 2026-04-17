@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import sys
 import socket
 import json
 import time
@@ -17,10 +18,10 @@ site.addsitedir('../py-pl-m2014r')
 from plm2014r import Sign, NoResponse
 
 
-async def serve():
+async def serve(host, port=8000):
     sign = Sign('/dev/ttyUSB0', retries=20)
     sign.wakeup()
-    with connect("ws://localhost:8000/ws/?sign=true") as websocket:
+    with connect(f'ws://{host}:{port}/ws/?sign=true') as websocket:
         print('Connected')
         sign.set_message('<FC>Connected')
         time.sleep(2)
@@ -35,9 +36,13 @@ async def serve():
 
 
 async def main():
+    try:
+        host = sys.argv[1]
+    except IndexError:
+        host = 'localhost'
     while True:
         try:
-            await serve()
+            await serve(host)
         except NoResponse:
             print('Sign not responding... retrying')
         except (ConnectionClosedError, InvalidMessage):
