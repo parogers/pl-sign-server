@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import socket
 import json
 import time
 import asyncio
@@ -41,7 +42,7 @@ async def main():
             print('Sign not responding... retrying')
         except (ConnectionClosedError, InvalidMessage):
             print('Connection closed... re-connecting')
-        except (ConnectionRefusedError, TimeoutError, InvalidStatus):
+        except (ConnectionRefusedError, TimeoutError, InvalidStatus, socket.gaierror):
             print('Could not reach server... retrying')
         except (FileNotFoundError, SerialException):
             print('Could not find serial device... retrying')
