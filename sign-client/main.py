@@ -3,7 +3,7 @@
 import json
 import time
 import asyncio
-from websockets.asyncio.client import connect
+from websockets.sync.client import connect
 from websockets.exceptions import (
     ConnectionClosedError,
     InvalidMessage,
@@ -19,12 +19,12 @@ from plm2014r import Sign, NoResponse
 async def serve():
     sign = Sign('/dev/ttyUSB0', retries=20)
     sign.wakeup()
-    async with connect("ws://localhost:8000/ws/?sign=true") as websocket:
+    with connect("ws://localhost:8000/ws/?sign=true") as websocket:
         print('Connected')
         sign.set_message('<FC>Connected')
         time.sleep(2)
         while True:
-            data = await websocket.recv()
+            data = websocket.recv()
             payload = json.loads(data)
             try:
                 message = payload['message']
