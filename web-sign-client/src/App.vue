@@ -55,7 +55,7 @@ function onPost() {
 
 <template>
     <div v-if="!connected" class="disconnected">
-        Warning: sign not disconnected
+        Sign not connected
     </div>
 
     <main>
