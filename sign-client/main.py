@@ -33,7 +33,7 @@ def make_ws_url(server_url):
     url = f'{ws_scheme}://{parsed.netloc}/{parsed.path}'
     if not url.endswith('/'):
         url += '/'
-    url += 'ws/'
+    url += 'ws/?sign=true'
     return url
 
 
