@@ -90,6 +90,7 @@ textarea {
     box-sizing: border-box;
     border: solid 1px gray;
     padding: 1em;
+    margin-top: 1em;
     margin-bottom: 1em;
 }
 
@@ -102,10 +103,14 @@ pre {
     background: #444;
     color: orange;
     font-weight: bold;
+    margin: 0;
 }
 
 main {
-    margin: 1em;
+    max-width: 80ch;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 1em;
 }
 
 .disconnected {
