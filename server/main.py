@@ -42,6 +42,7 @@ app = FastAPI()
 
 CORS_ORIGINS = [
     'http://localhost:5173',
+    'http://studio.local:5173',
 ]
 app.add_middleware(
     CORSMiddleware,
