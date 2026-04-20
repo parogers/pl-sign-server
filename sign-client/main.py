@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from urllib.parse import urlparse
+import argparse
 import sys
 import socket
 import json
@@ -18,10 +20,28 @@ site.addsitedir('../py-pl-m2014r')
 from plm2014r import Sign, NoResponse
 
 
-async def serve(host, port=8000):
-    sign = Sign('/dev/ttyUSB0', retries=20)
-    sign.wakeup()
-    with connect(f'ws://{host}:{port}/ws/?sign=true') as websocket:
+def make_ws_url(server_url):
+    parsed = urlparse(server_url)
+    ws_scheme = ''
+    if parsed.scheme == 'http':
+        ws_scheme = 'ws'
+    elif parsed.scheme == 'https':
+        ws_scheme = 'wss'
+    else:
+        raise Exception(f'unknown scheme: {server_url}')
+
+    url = f'{ws_scheme}://{parsed.netloc}/{parsed.path}'
+    if not url.endswith('/'):
+        url += '/'
+    url += 'ws/'
+    return url
+
+
+async def serve(server_url):
+
+    with connect(make_ws_url(server_url)) as websocket:
+        sign = Sign('/dev/ttyUSB0', retries=20)
+        sign.wakeup()
         print('Connected')
         sign.set_message('<FC>Connected')
         time.sleep(2)
@@ -36,13 +56,19 @@ async def serve(host, port=8000):
 
 
 async def main():
-    try:
-        host = sys.argv[1]
-    except IndexError:
-        host = 'localhost'
+    parser = argparse.ArgumentParser(description='Pulls messages from a sign server and drives a PL sign via USB')
+    parser.add_argument(
+        '--url',
+        type=str,
+        nargs=1,
+        required=False,
+        default=['http://localhost:8000'],
+    )
+    args = parser.parse_args(sys.argv[1:])
+    url = args.url[0]
     while True:
         try:
-            await serve(host)
+            await serve(url)
         except NoResponse:
             print('Sign not responding... retrying')
         except (ConnectionClosedError, InvalidMessage, ConnectionError):
