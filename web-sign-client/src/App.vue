@@ -59,12 +59,10 @@ function onPost() {
     </div>
 
     <main>
-        <p>Sign is currently displaying:</p>
-
         <pre>{{ preview }}</pre>
 
         <div class="input-area">
-            <textarea placeholder="Your message here" v-model="message">
+            <textarea placeholder="Enter your message here" v-model="message">
             </textarea>
 
             <button @click="onPost()">
@@ -122,9 +120,5 @@ main {
 }
 
 .input-area {
-    position: absolute;
-    bottom: 0.5em;
-    left: 1em;
-    right: 1em;
 }
 </style>
