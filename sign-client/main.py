@@ -45,7 +45,7 @@ async def main():
             await serve(host)
         except NoResponse:
             print('Sign not responding... retrying')
-        except (ConnectionClosedError, InvalidMessage):
+        except (ConnectionClosedError, InvalidMessage, ConnectionError):
             print('Connection closed... re-connecting')
         except (ConnectionRefusedError, TimeoutError, InvalidStatus, socket.gaierror):
             print('Could not reach server... retrying')
