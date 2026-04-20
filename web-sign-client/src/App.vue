@@ -12,7 +12,7 @@ function getServerUrl(): string {
 
 function useWebSocket(url: string) {
     const socket = new WebSocket(url);
-    const lastMessage = ref('');
+    const lastMessage = ref<any>('');
 
     socket.onmessage = (event) => {
         lastMessage.value = JSON.parse(event.data);
@@ -24,7 +24,7 @@ function useWebSocket(url: string) {
     socket.onerror = (err) => {
         console.error('WebSocket error:', err)
     }
-    const send = (msg) => {
+    const send = (msg: any) => {
         if (socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify(msg));
         }
@@ -40,7 +40,7 @@ watch(lastMessage, () => {
         preview.value = lastMessage.value.message;
     }
     if ('sign_connected' in lastMessage.value) {
-        connected.value = lastMessage.value.sign_connected;
+        connected.value = !!lastMessage.value.sign_connected;
     }
 });
 
