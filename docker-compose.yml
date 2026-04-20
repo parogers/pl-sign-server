@@ -1,0 +1,14 @@
+
+services:
+    server:
+        build:
+            dockerfile: ./docker/prod/server/Dockerfile
+            context: .
+        ports:
+            - 127.0.0.1:8000:80
+    web:
+        build:
+            dockerfile: ./docker/prod/web/Dockerfile
+            context: .
+        ports:
+            - 127.0.0.1:5173:80
