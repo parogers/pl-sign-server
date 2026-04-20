@@ -7,6 +7,9 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
 export default defineConfig({
+    server: {
+        allowedHosts: ['studio.local'],
+    },
     plugins: [
         vue(),
         vueJsx(),

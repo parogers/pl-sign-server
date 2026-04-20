@@ -1,9 +1,14 @@
 <script setup lang="ts">
 import { ref, watch, onUnmounted } from 'vue';
 
+const SERVER_PORT = 8000;
 const connected = ref(false);
 const message = ref('');
 const preview = ref('');
+
+function getServerUrl(): string {
+    return `${location.protocol}//${location.hostname}:${SERVER_PORT}`;
+}
 
 function useWebSocket(url: string) {
     const socket = new WebSocket(url);
@@ -28,7 +33,7 @@ function useWebSocket(url: string) {
     return { send, lastMessage };
 }
 
-const { lastMessage } = useWebSocket('http://localhost:8000/ws/');
+const { lastMessage } = useWebSocket(`${getServerUrl()}/ws/`);
 
 watch(lastMessage, () => {
     if (lastMessage?.value?.message) {
@@ -40,7 +45,7 @@ watch(lastMessage, () => {
 });
 
 function onPost() {
-    fetch('http://localhost:8000/message/', {
+    fetch(`${getServerUrl()}/message/`, {
         method: 'POST',
         headers: {
             'Content-type' : 'application/json',
