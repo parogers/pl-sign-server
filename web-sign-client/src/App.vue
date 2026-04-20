@@ -59,10 +59,6 @@ function onPost() {
 </script>
 
 <template>
-    <div v-if="!connected" class="disconnected">
-        Sign not connected
-    </div>
-
     <main>
         <pre>{{ preview }}</pre>
 
@@ -73,6 +69,10 @@ function onPost() {
             <button @click="onPost()">
                 Submit
             </button>
+        </div>
+
+        <div v-if="!connected" class="disconnected">
+            Sign not connected
         </div>
     </main>
 </template>
@@ -109,18 +109,15 @@ main {
 }
 
 .disconnected {
-    position: absolute;
     display: flex;
     align-items: center;
     justify-content: center;
-    top: 0;
-    left: 0;
-    right: 0;
     height: 2em;
     font-style: italic;
     background: #a00000;
     color: white;
     padding: 0.5em;
+    margin-top: 1em;
     font-weight: bold;
 }
 
