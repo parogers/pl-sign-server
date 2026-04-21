@@ -3,6 +3,7 @@ import { ref, watch, reactive, onUnmounted, onMounted } from 'vue';
 
 const CLIENT_ID_KEY = 'sign-client-id';
 const SERVER_PORT = 8000;
+const MAX_MESSAGE_LEN = 50
 
 const connected = ref(false);
 const message = ref('');
@@ -89,12 +90,19 @@ function onPost() {
 <template>
     <main>
         <div class="input-area">
-            <textarea placeholder="Enter your message here" v-model="message">
+            <textarea
+                placeholder="Enter your message here"
+                v-model="message"
+                :maxlength="MAX_MESSAGE_LEN"
+            >
             </textarea>
+            <div class="button-area">
+                <button @click="onPost()">
+                    Post message
+                </button>
 
-            <button @click="onPost()">
-                Submit
-            </button>
+                <div>({{ message.length }}/{{ MAX_MESSAGE_LEN }} chars)</div>
+            </div>
         </div>
 
         <div v-if="!connected" class="disconnected">
@@ -111,21 +119,23 @@ function onPost() {
 button {
     display: block;
     font-size: larger;
+    padding: 0.25em;
+    color: inherit;
 }
 
 textarea {
     display: block;
     width: 100%;
-    height: 10em;
+    height: 5em;
+    padding: 0.5em;
     box-sizing: border-box;
-    border: solid 1px gray;
-    padding: 1em;
+    border: solid 1px #aaa;
     margin-top: 1em;
-    margin-bottom: 1em;
+    margin-bottom: 0.5em;
 }
 
 .preview {
-    font-size: xx-large;
+    font-size: x-large;
     width: 100%;
     border: solid 1px gray;
     padding: 0.75em;
@@ -167,5 +177,10 @@ main {
 }
 
 .input-area {
+}
+
+.button-area {
+    display: flex;
+    justify-content: space-between;
 }
 </style>
