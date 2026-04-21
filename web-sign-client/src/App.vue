@@ -7,7 +7,10 @@ const message = ref('');
 const preview = ref('');
 
 function getServerUrl(): string {
-    return `${location.protocol}//${location.hostname}:${SERVER_PORT}`;
+    return (
+        import.meta.env.VITE_SIGN_SERVER ??
+        `${location.protocol}//${location.hostname}:${SERVER_PORT}`
+    );
 }
 
 function useWebSocket(url: string) {
