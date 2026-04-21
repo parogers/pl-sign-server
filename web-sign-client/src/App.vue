@@ -8,7 +8,7 @@ const MAX_MESSAGE_LEN = 50
 const connected = ref(false);
 const message = ref('');
 const lastMessage = ref('');
-const preview = reactive([]);
+const preview = reactive<string[]>([]);
 const clientID = ref('');
 
 function getServerUrl(): string {
@@ -20,26 +20,26 @@ function getServerUrl(): string {
 
 function getClientID(): string {
     if (localStorage.getItem(CLIENT_ID_KEY)) {
-        return localStorage.getItem(CLIENT_ID_KEY);
+        return localStorage.getItem(CLIENT_ID_KEY) ?? '';
     }
     const clientID = ('' + Math.random()).slice(2);
     localStorage.setItem(CLIENT_ID_KEY, clientID);
     return clientID;
 }
 
-function useWebSocket(url: string, callbacks: any)
+function useWebSocket(url: string)
 {
     const lastSocketMessage = ref<any>('');
-    let socket = null;
+    let socket: WebSocket|null = null;
 
-    function onMessage(event) {
+    function onMessage(event: any) {
         lastSocketMessage.value = JSON.parse(event.data);
     }
     function onClose() {
         console.warn('WebSocket closed... reconnecting');
         setTimeout(() => init(), 3000);
     }
-    function onError(err) {
+    function onError(err: any) {
         console.error('WebSocket error:', err);
     }
     function init() {
@@ -49,7 +49,7 @@ function useWebSocket(url: string, callbacks: any)
         socket.onerror = onError;
     }
     const send = (msg: any) => {
-        if (socket.readyState === WebSocket.OPEN) {
+        if (socket?.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify(msg));
         }
     }
@@ -63,7 +63,7 @@ const { lastSocketMessage } = useWebSocket(`${getServerUrl()}/ws/`);
 watch(lastSocketMessage, () => {
     if (lastSocketMessage.value?.message) {
         preview.length = 0;
-        preview.push(...lastSocketMessage.value.messages);
+        preview.push(...<string[]>lastSocketMessage.value.messages);
     }
     if ('sign_connected' in lastSocketMessage.value) {
         connected.value = !!lastSocketMessage.value.sign_connected;
