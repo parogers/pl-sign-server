@@ -5,7 +5,8 @@ const CLIENT_ID_KEY = 'sign-client-id';
 const SERVER_PORT = 8000;
 const MAX_MESSAGE_LEN = 50
 
-const connected = ref(false);
+const isConnected = ref(false);
+const isSignConnected = ref(false);
 const message = ref('');
 const lastMessage = ref('');
 const preview = reactive<string[]>([]);
@@ -33,20 +34,26 @@ function useWebSocket(url: string)
     let socket: WebSocket|null = null;
 
     function onMessage(event: any) {
+        isConnected.value = true;
         lastSocketMessage.value = JSON.parse(event.data);
     }
     function onClose() {
+        isConnected.value = false;
         console.warn('WebSocket closed... reconnecting');
         setTimeout(() => init(), 3000);
     }
     function onError(err: any) {
         console.error('WebSocket error:', err);
     }
+    function onOpen() {
+        isConnected.value = true;
+    }
     function init() {
         socket = new WebSocket(url);
         socket.onmessage = onMessage;
         socket.onclose = onClose;
         socket.onerror = onError;
+        socket.onopen = onOpen;
     }
     const send = (msg: any) => {
         if (socket?.readyState === WebSocket.OPEN) {
@@ -66,7 +73,7 @@ watch(lastSocketMessage, () => {
         preview.push(...<string[]>lastSocketMessage.value.messages);
     }
     if ('sign_connected' in lastSocketMessage.value) {
-        connected.value = !!lastSocketMessage.value.sign_connected;
+        isSignConnected.value = !!lastSocketMessage.value.sign_connected;
     }
 });
 
@@ -89,7 +96,7 @@ function onPost() {
 }
 
 function isSubmitEnabled() {
-    return lastMessage.value !== message.value;
+    return lastMessage.value !== message.value && isConnected.value;
 }
 
 </script>
@@ -113,7 +120,11 @@ function isSubmitEnabled() {
             </div>
         </div>
 
-        <div v-if="!connected" class="disconnected">
+        <div v-if="!isConnected" class="disconnected">
+            Connecting to server...
+        </div>
+
+        <div v-if="isConnected && !isSignConnected" class="disconnected">
             Sign not connected
         </div>
 
@@ -139,6 +150,7 @@ button {
 button:disabled {
     color: gray;
     outline: solid 1px #eee;
+    pointer-events: none;
 }
 
 button:active {
