@@ -80,7 +80,6 @@ def make_payload(include_message=True):
         'sign_connected' : bool(state.sign_clients),
     }
     if include_message:
-        # payload['message'] = state.message + '       '
         messages = [
             msg
             for client_id, msg in reversed(sorted(
@@ -89,11 +88,11 @@ def make_payload(include_message=True):
             ))
         ]
         payload['messages'] = messages
+        # Delay, scroll up, scroll left for each message
         payload['message'] = ''.join([
-            f'{msg:13}' + '<FP><FI><FS>'
+            f'<FP><FI><FS>{msg:13}'
             for msg in messages
         ])
-        print(messages)
     return payload
 
 
