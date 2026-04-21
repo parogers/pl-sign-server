@@ -13,26 +13,34 @@ function getServerUrl(): string {
     );
 }
 
-function useWebSocket(url: string) {
-    const socket = new WebSocket(url);
+function useWebSocket(url: string, callbacks: any)
+{
     const lastMessage = ref<any>('');
+    let socket = null;
 
-    socket.onmessage = (event) => {
+    function onMessage(event) {
         lastMessage.value = JSON.parse(event.data);
     }
-    socket.onclose = () => {
-        console.warn('WebSocket closed... reconnecting')
-        setTimeout(() => useWebSocket(url), 3000)
+    function onClose() {
+        console.warn('WebSocket closed... reconnecting');
+        setTimeout(() => init(), 3000);
     }
-    socket.onerror = (err) => {
-        console.error('WebSocket error:', err)
+    function onError(err) {
+        console.error('WebSocket error:', err);
+    }
+    function init() {
+        socket = new WebSocket(url);
+        socket.onmessage = onMessage;
+        socket.onclose = onClose;
+        socket.onerror = onError;
     }
     const send = (msg: any) => {
         if (socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify(msg));
         }
     }
-    onUnmounted(() => socket.close());
+    onUnmounted(() => socket?.close());
+    init();
     return { send, lastMessage };
 }
 
