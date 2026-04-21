@@ -1,16 +1,28 @@
 <script setup lang="ts">
-import { ref, watch, onUnmounted } from 'vue';
+import { ref, watch, reactive, onUnmounted, onMounted } from 'vue';
 
+const CLIENT_ID_KEY = 'sign-client-id';
 const SERVER_PORT = 8000;
+
 const connected = ref(false);
 const message = ref('');
-const preview = ref('');
+const preview = reactive([]);
+const clientID = ref('');
 
 function getServerUrl(): string {
     return (
         import.meta.env.VITE_SIGN_SERVER ??
         `${location.protocol}//${location.hostname}:${SERVER_PORT}`
     );
+}
+
+function getClientID(): string {
+    if (localStorage.getItem(CLIENT_ID_KEY)) {
+        return localStorage.getItem(CLIENT_ID_KEY);
+    }
+    const clientID = ('' + Math.random()).slice(2);
+    localStorage.setItem(CLIENT_ID_KEY, clientID);
+    return clientID;
 }
 
 function useWebSocket(url: string, callbacks: any)
@@ -48,11 +60,16 @@ const { lastMessage } = useWebSocket(`${getServerUrl()}/ws/`);
 
 watch(lastMessage, () => {
     if (lastMessage?.value?.message) {
-        preview.value = lastMessage.value.message;
+        preview.length = 0;
+        preview.push(...lastMessage.value.messages);
     }
     if ('sign_connected' in lastMessage.value) {
         connected.value = !!lastMessage.value.sign_connected;
     }
+});
+
+onMounted(() => {
+    clientID.value = getClientID();
 });
 
 function onPost() {
@@ -63,16 +80,14 @@ function onPost() {
         },
         body: JSON.stringify({
             content: message.value,
+            client_id: clientID.value,
         }),
     });
 }
-
 </script>
 
 <template>
     <main>
-        <pre>{{ preview }}</pre>
-
         <div class="input-area">
             <textarea placeholder="Enter your message here" v-model="message">
             </textarea>
@@ -84,6 +99,10 @@ function onPost() {
 
         <div v-if="!connected" class="disconnected">
             Sign not connected
+        </div>
+
+        <div class="preview">
+            <p v-for="message in preview">{{ message }}</p>
         </div>
     </main>
 </template>
@@ -105,16 +124,26 @@ textarea {
     margin-bottom: 1em;
 }
 
-pre {
+.preview {
     font-size: xx-large;
     width: 100%;
     border: solid 1px gray;
-    padding: 0.5em;
+    padding: 0.75em;
     box-sizing: border-box;
     background: #444;
     color: orange;
     font-weight: bold;
+    font-family: monospace;
     margin: 0;
+    margin-top: 1em;
+}
+
+.preview p:first-of-type {
+    margin-top: 0;
+}
+
+.preview p:last-of-type {
+    margin-bottom: 0;
 }
 
 main {

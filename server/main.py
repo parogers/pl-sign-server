@@ -11,14 +11,19 @@ from fastapi.middleware.cors import CORSMiddleware
 
 class State:
     version: int = 0
-    message: str = ''
+    message: str = 'Server ready'
     sign_clients: set
+    messages_by_client_id: dict
 
     def __init__(self):
         self.sign_clients = set()
+        self.messages_by_client_id = {}
+        self.timestamp_by_client_id = {}
 
-    def set_message(self, msg):
+    def set_message(self, msg, client_id):
         self.message = msg
+        self.messages_by_client_id[client_id] = msg
+        self.timestamp_by_client_id[client_id] = time.time()
         self.version += 1
 
     def has_changed(self, old_version):
@@ -36,6 +41,7 @@ state = State()
 
 class PostMessage(BaseModel):
     content: str
+    client_id: str
 
 
 app = FastAPI()
@@ -60,7 +66,7 @@ def index():
 
 @app.post('/message/')
 def post_message(message: PostMessage):
-    state.set_message(message.content)
+    state.set_message(message.content, client_id=message.client_id)
     return message
 
 
@@ -69,13 +75,25 @@ def get_message():
     return state.message
 
 
-
 def make_payload(include_message=True):
     payload = {
         'sign_connected' : bool(state.sign_clients),
     }
     if include_message:
-        payload['message'] = state.message + '       '
+        # payload['message'] = state.message + '       '
+        messages = [
+            msg
+            for client_id, msg in reversed(sorted(
+                state.messages_by_client_id.items(),
+                key=lambda args: state.timestamp_by_client_id[args[0]]
+            ))
+        ]
+        payload['messages'] = messages
+        payload['message'] = ''.join([
+            f'{msg:13}' + '<FP><FI><FS>'
+            for msg in messages
+        ])
+        print(messages)
     return payload
 
 
