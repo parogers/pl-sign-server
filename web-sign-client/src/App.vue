@@ -7,6 +7,7 @@ const MAX_MESSAGE_LEN = 50
 
 const connected = ref(false);
 const message = ref('');
+const lastMessage = ref('');
 const preview = reactive([]);
 const clientID = ref('');
 
@@ -28,11 +29,11 @@ function getClientID(): string {
 
 function useWebSocket(url: string, callbacks: any)
 {
-    const lastMessage = ref<any>('');
+    const lastSocketMessage = ref<any>('');
     let socket = null;
 
     function onMessage(event) {
-        lastMessage.value = JSON.parse(event.data);
+        lastSocketMessage.value = JSON.parse(event.data);
     }
     function onClose() {
         console.warn('WebSocket closed... reconnecting');
@@ -54,18 +55,18 @@ function useWebSocket(url: string, callbacks: any)
     }
     onUnmounted(() => socket?.close());
     init();
-    return { send, lastMessage };
+    return { send, lastSocketMessage };
 }
 
-const { lastMessage } = useWebSocket(`${getServerUrl()}/ws/`);
+const { lastSocketMessage } = useWebSocket(`${getServerUrl()}/ws/`);
 
-watch(lastMessage, () => {
-    if (lastMessage?.value?.message) {
+watch(lastSocketMessage, () => {
+    if (lastSocketMessage.value?.message) {
         preview.length = 0;
-        preview.push(...lastMessage.value.messages);
+        preview.push(...lastSocketMessage.value.messages);
     }
-    if ('sign_connected' in lastMessage.value) {
-        connected.value = !!lastMessage.value.sign_connected;
+    if ('sign_connected' in lastSocketMessage.value) {
+        connected.value = !!lastSocketMessage.value.sign_connected;
     }
 });
 
@@ -74,6 +75,7 @@ onMounted(() => {
 });
 
 function onPost() {
+    lastMessage.value = message.value;
     fetch(`${getServerUrl()}/message/`, {
         method: 'POST',
         headers: {
@@ -85,23 +87,29 @@ function onPost() {
         }),
     });
 }
+
+function isSubmitEnabled() {
+    return lastMessage.value !== message.value;
+}
+
 </script>
 
 <template>
     <main>
         <div class="input-area">
             <textarea
-                placeholder="Enter your message here"
+                placeholder="Your message here"
                 v-model="message"
                 :maxlength="MAX_MESSAGE_LEN"
+                @keydown.enter.prevent="onPost()"
             >
             </textarea>
             <div class="button-area">
-                <button @click="onPost()">
+                <button @click="onPost()" :disabled="!isSubmitEnabled()">
                     Post message
                 </button>
 
-                <div>({{ message.length }}/{{ MAX_MESSAGE_LEN }} chars)</div>
+                <div class="char-count">({{ message.length }}/{{ MAX_MESSAGE_LEN }} chars)</div>
             </div>
         </div>
 
@@ -119,19 +127,35 @@ function onPost() {
 button {
     display: block;
     font-size: larger;
-    padding: 0.25em;
+    padding: 0.25em 0.5em;
     color: inherit;
+    background: #eee;
+    border: none;
+    outline: solid 1px lightgray;
+    border-radius: 0.25em;
+    box-shadow: 2px 4px 6px rgb(0, 0, 0, 0.25);
+}
+
+button:disabled {
+    color: gray;
+    outline: solid 1px #eee;
+}
+
+button:active {
+    box-shadow: none;
+    transform: scale(0.95);
 }
 
 textarea {
+    font-size: larger;
     display: block;
     width: 100%;
     height: 5em;
     padding: 0.5em;
     box-sizing: border-box;
-    border: solid 1px #aaa;
-    margin-top: 1em;
-    margin-bottom: 0.5em;
+    border: solid 1px lightgray;
+    border-radius: 0.25em;
+    margin-bottom: 1em;
 }
 
 .preview {
@@ -145,7 +169,8 @@ textarea {
     font-weight: bold;
     font-family: monospace;
     margin: 0;
-    margin-top: 1em;
+    margin-top: 2em;
+    border-radius: 0.25em;
 }
 
 .preview p:first-of-type {
@@ -182,5 +207,9 @@ main {
 .button-area {
     display: flex;
     justify-content: space-between;
+}
+
+.char-count {
+    color: gray;
 }
 </style>
