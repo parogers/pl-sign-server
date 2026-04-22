@@ -3,7 +3,8 @@ import { ref, watch, reactive, onUnmounted, onMounted } from 'vue';
 
 const CLIENT_ID_KEY = 'sign-client-id';
 const SERVER_PORT = 8000;
-const MAX_MESSAGE_LEN = 50
+const MAX_MESSAGE_LEN = 50;
+const MAX_NAME_LEN = 10;
 
 const isConnected = ref(false);
 const isSignConnected = ref(false);
@@ -112,12 +113,16 @@ function isSubmitEnabled() {
 <template>
     <main>
         <div class="input-area">
-            <input
-                v-model="name"
-                type="text"
-                placeholder="Your name (optional)"
-                @keydown.enter.prevent="onPost()"
-            />
+            <div class="name-area">
+                <input
+                    v-model="name"
+                    type="text"
+                    :maxlength="MAX_NAME_LEN"
+                    placeholder="Your name (optional)"
+                    @keydown.enter.prevent="onPost()"
+                />
+                <div class="name-char-count">({{ name.length }}/{{ MAX_NAME_LEN }})</div>
+            </div>
 
             <textarea
                 placeholder="Your message here"
@@ -131,7 +136,7 @@ function isSubmitEnabled() {
                     Post message
                 </button>
 
-                <div class="char-count">({{ message.length }}/{{ MAX_MESSAGE_LEN }} chars)</div>
+                <div class="message-char-count">({{ message.length }}/{{ MAX_MESSAGE_LEN }})</div>
             </div>
         </div>
 
@@ -238,15 +243,34 @@ main {
     justify-content: space-between;
 }
 
-.char-count {
+.message-char-count {
+    position: relative;
+    top: -2.5em;
+    left: -0.5em;
+    color: gray;
+}
+
+.name-area {
+    display: flex;
+    flex-direction: column;
+    align-items: end;
+    position: relative;
+}
+
+.name-char-count {
+    position: absolute;
+    top: 0.5em;
+    right: 0.5em;
     color: gray;
 }
 
 input {
+    width: 100%;
+    box-sizing: border-box;
     font-family: monospace;
     padding: 0.5em;
     font-size: 1rem;
-    display: block;
+    display: inline-block;
     margin-bottom: 1em;
     border: solid 1px lightgray;
 }
