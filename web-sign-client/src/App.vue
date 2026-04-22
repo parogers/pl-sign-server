@@ -9,8 +9,10 @@ const isConnected = ref(false);
 const isSignConnected = ref(false);
 const message = ref('');
 const lastMessage = ref('');
+const lastName = ref('');
 const preview = reactive<string[]>([]);
 const clientID = ref('');
+const name = ref('');
 
 function getServerUrl(): string {
     return (
@@ -46,9 +48,11 @@ function useWebSocket(url: string)
         console.error('WebSocket error:', err);
     }
     function onOpen() {
+        console.info('WebSocket connected');
         isConnected.value = true;
     }
     function init() {
+        console.info('WebSocket connecting...')
         socket = new WebSocket(url);
         socket.onmessage = onMessage;
         socket.onclose = onClose;
@@ -83,12 +87,14 @@ onMounted(() => {
 
 function onPost() {
     lastMessage.value = message.value;
+    lastName.value = name.value;
     fetch(`${getServerUrl()}/message/`, {
         method: 'POST',
         headers: {
             'Content-type' : 'application/json',
         },
         body: JSON.stringify({
+            name: name.value,
             content: message.value,
             client_id: clientID.value,
         }),
@@ -96,14 +102,23 @@ function onPost() {
 }
 
 function isSubmitEnabled() {
-    return lastMessage.value !== message.value && isConnected.value;
+    return isConnected.value && message.value && (
+        lastMessage.value !== message.value ||
+        lastName.value !== name.value
+    );
 }
-
 </script>
 
 <template>
     <main>
         <div class="input-area">
+            <input
+                v-model="name"
+                type="text"
+                placeholder="Your name (optional)"
+                @keydown.enter.prevent="onPost()"
+            />
+
             <textarea
                 placeholder="Your message here"
                 v-model="message"
@@ -129,6 +144,7 @@ function isSubmitEnabled() {
         </div>
 
         <div class="preview">
+            <p v-if="preview.length === 0">&nbsp;</p>
             <p v-for="message in preview">{{ message }}</p>
         </div>
     </main>
@@ -159,7 +175,8 @@ button:active {
 }
 
 textarea {
-    font-size: larger;
+    font-size: 1rem;
+    font-family: monospace;
     display: block;
     width: 100%;
     height: 5em;
@@ -223,5 +240,14 @@ main {
 
 .char-count {
     color: gray;
+}
+
+input {
+    font-family: monospace;
+    padding: 0.5em;
+    font-size: 1rem;
+    display: block;
+    margin-bottom: 1em;
+    border: solid 1px lightgray;
 }
 </style>

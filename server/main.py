@@ -14,16 +14,20 @@ class State:
     message: str = 'Server ready'
     sign_clients: set
     messages_by_client_id: dict
+    timestamp_by_client_id: dict
+    names_by_client_id: dict
 
     def __init__(self):
         self.sign_clients = set()
         self.messages_by_client_id = {}
         self.timestamp_by_client_id = {}
+        self.names_by_client_id = {}
 
-    def set_message(self, msg, client_id):
+    def set_message(self, msg, name, client_id):
         self.message = msg
         self.messages_by_client_id[client_id] = msg
         self.timestamp_by_client_id[client_id] = time.time()
+        self.names_by_client_id[client_id] = name
         self.version += 1
 
     def has_changed(self, old_version):
@@ -40,6 +44,7 @@ state = State()
 
 
 class PostMessage(BaseModel):
+    name: str
     content: str
     client_id: str
 
@@ -66,7 +71,11 @@ def index():
 
 @app.post('/message/')
 def post_message(message: PostMessage):
-    state.set_message(message.content, client_id=message.client_id)
+    state.set_message(
+        msg=message.content,
+        client_id=message.client_id,
+        name=message.name,
+    )
     return message
 
 
@@ -80,19 +89,30 @@ def make_payload(include_message=True):
         'sign_connected' : bool(state.sign_clients),
     }
     if include_message:
+        def _fmt_message(client_id):
+            msg = state.messages_by_client_id[client_id]
+            name = state.names_by_client_id.get(client_id)
+            if name:
+                msg = f'{name} says: {msg}'
+            return msg
+
         messages = [
-            msg
-            for client_id, msg in reversed(sorted(
-                state.messages_by_client_id.items(),
-                key=lambda args: state.timestamp_by_client_id[args[0]]
+            _fmt_message(client_id)
+            for client_id in reversed(sorted(
+                state.messages_by_client_id,
+                key=lambda client_id: state.timestamp_by_client_id[client_id]
             ))
         ]
         payload['messages'] = messages
-        # Delay, scroll up, scroll left for each message
         payload['message'] = ''.join([
-            f'<FP><FI><FS>{msg:13}'
+            f'{msg}             '
             for msg in messages
         ])
+        # # Delay, scroll up, scroll left for each message
+        # payload['message'] = ''.join([
+        #     f'<FP><FI><FS>{msg:13}'
+        #     for msg in messages
+        # ])
     return payload
 
 
