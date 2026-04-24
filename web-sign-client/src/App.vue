@@ -160,16 +160,16 @@ button {
     display: block;
     font-size: larger;
     padding: 0.25em 0.5em;
-    color: inherit;
-    background: #eee;
+    color: var(--color-button-text);
+    background: var(--color-button-bg);
     border: none;
-    outline: solid 1px lightgray;
+    outline: solid 1px var(--color-button-text);
     border-radius: 0.25em;
     box-shadow: 2px 4px 6px rgb(0, 0, 0, 0.25);
 }
 
 button:disabled {
-    color: gray;
+    opacity: 0.5;
     outline: solid 1px #eee;
     pointer-events: none;
 }
@@ -190,6 +190,7 @@ textarea {
     border: solid 1px lightgray;
     border-radius: 0.25em;
     margin-bottom: 1em;
+    background: var(--color-input-bg);
 }
 
 .preview {
@@ -273,5 +274,7 @@ input {
     display: inline-block;
     margin-bottom: 1em;
     border: solid 1px lightgray;
+    background: var(--color-input-bg);
+    border-radius: 0.25em;
 }
 </style>

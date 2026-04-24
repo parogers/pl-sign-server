@@ -32,8 +32,9 @@
 
     --color-heading: var(--vt-c-text-light-1);
     --color-text: var(--vt-c-text-light-1);
-
-    --section-gap: 160px;
+    --color-input-bg: white;
+    --color-button-bg: #eee;
+    --color-button-text: black;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -47,5 +48,8 @@
 
         --color-heading: var(--vt-c-text-dark-1);
         --color-text: var(--vt-c-text-dark-2);
+        --color-input-bg: lightgray;
+        --color-button-bg: #333;
+        --color-button-text: white;
     }
 }
