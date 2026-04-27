@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from dataclasses import dataclass
 import time
 import json
 import asyncio
@@ -9,9 +10,17 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 
+@dataclass
+class Message:
+    message_id: int
+    client_id: int
+    client_name: str
+    content: str
+    timestamp: int
+
+
 class State:
     version: int = 0
-    message: str = 'Server ready'
     sign_clients: set
     messages_by_client_id: dict
     timestamp_by_client_id: dict
@@ -20,14 +29,15 @@ class State:
     def __init__(self):
         self.sign_clients = set()
         self.messages_by_client_id = {}
-        self.timestamp_by_client_id = {}
-        self.names_by_client_id = {}
 
     def set_message(self, msg, name, client_id):
-        self.message = msg
-        self.messages_by_client_id[client_id] = msg
-        self.timestamp_by_client_id[client_id] = time.time()
-        self.names_by_client_id[client_id] = name
+        self.messages_by_client_id[client_id] = Message(
+            message_id=client_id,
+            client_id=client_id,
+            client_name=name,
+            content=msg,
+            timestamp=time.time(),
+        )
         self.version += 1
 
     def has_changed(self, old_version):
@@ -81,7 +91,7 @@ def post_message(message: PostMessage):
 
 @app.get('/message/')
 def get_message():
-    return state.message
+    return ''
 
 
 def make_payload(include_message=True):
@@ -91,19 +101,20 @@ def make_payload(include_message=True):
     if include_message:
         def _fmt_message(client_id):
             msg = state.messages_by_client_id[client_id]
-            name = state.names_by_client_id.get(client_id)
-            if name:
-                msg = f'{name} says: {msg}'
-            return msg
+            if msg.client_name:
+                content = f'{msg.client_name} says: {msg.content}'
+            else:
+                content = msg.content
+            return content
 
         messages = [
             _fmt_message(client_id)
             for client_id in reversed(sorted(
                 state.messages_by_client_id,
-                key=lambda client_id: state.timestamp_by_client_id[client_id]
+                key=lambda client_id: state.messages_by_client_id[client_id].timestamp
             ))
         ]
-        payload['messages'] = messages
+        payload['messages'] = [msg for msg in messages]
         payload['message'] = ''.join([
             f'{msg}             '
             for msg in messages
