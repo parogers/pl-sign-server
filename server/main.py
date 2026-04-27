@@ -1,67 +1,16 @@
 #!/usr/bin/env python3
 
-from dataclasses import dataclass
 import time
 import json
-import asyncio
-from pydantic import BaseModel
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-
-@dataclass
-class Message:
-    id: int
-    client_id: int
-    client_name: str
-    content: str
-    timestamp: int
-
-
-class State:
-    version: int = 0
-    sign_clients: set
-    messages_by_client_id: dict
-    timestamp_by_client_id: dict
-    names_by_client_id: dict
-
-    def __init__(self):
-        self.sign_clients = set()
-        self.messages_by_client_id = {}
-
-    def set_message(self, msg, name, client_id):
-        msg = Message(
-            id=client_id,
-            client_id=client_id,
-            client_name=name,
-            content=msg,
-            timestamp=time.time(),
-        )
-        self.messages_by_client_id[client_id] = msg
-        self.version += 1
-        return msg
-
-    def has_changed(self, old_version):
-        return self.version != old_version
-
-    def add_sign_client(self, websocket):
-        self.sign_clients.add(id(websocket))
-
-    def remove_sign_client(self, websocket):
-        self.sign_clients.remove(id(websocket))
-
-
-state = State()
-
-
-class PostMessage(BaseModel):
-    name: str
-    content: str
-    client_id: str
+from model import State
+from routes import router
 
 
 app = FastAPI()
+app.include_router(router)
 
 CORS_ORIGINS = [
     'http://localhost:5173',
@@ -74,92 +23,3 @@ app.add_middleware(
     allow_methods=['*'],
     allow_headers=['*'],
 )
-
-
-@app.get("/")
-def index():
-    return ''
-
-
-@app.post('/message/')
-def post_message(message: PostMessage):
-    msg = state.set_message(
-        msg=message.content,
-        client_id=message.client_id,
-        name=message.name,
-    )
-    return make_message_payload(msg)
-
-
-# @app.get('/message/')
-# def get_message():
-#     return ''
-
-
-def make_message_payload(message: Message):
-    return {
-        "id" : message.id,
-        "name" : message.client_name,
-        "content" : message.content,
-    }
-
-
-def make_payload(include_message=True):
-    payload = {
-        'sign_connected' : bool(state.sign_clients),
-    }
-    if include_message:
-        def _fmt_message(client_id):
-            msg = state.messages_by_client_id[client_id]
-            if msg.client_name:
-                content = f'{msg.client_name} says: {msg.content}'
-            else:
-                content = msg.content
-            return content
-
-        messages = [
-            _fmt_message(client_id)
-            for client_id in reversed(sorted(
-                state.messages_by_client_id,
-                key=lambda client_id: state.messages_by_client_id[client_id].timestamp
-            ))
-        ]
-        payload['messages'] = [msg for msg in messages]
-        payload['message'] = ''.join([
-            f'{msg}             '
-            for msg in messages
-        ])
-        # # Delay, scroll up, scroll left for each message
-        # payload['message'] = ''.join([
-        #     f'<FP><FI><FS>{msg:13}'
-        #     for msg in messages
-        # ])
-    return payload
-
-
-@app.websocket("/ws/")
-async def websocket_endpoint(websocket: WebSocket, sign: bool | None = None):
-    if sign:
-        print('Sign has connected')
-        state.add_sign_client(websocket)
-    await websocket.accept()
-    last_version = -1
-    last_ping = 0
-    while True:
-        try:
-            # TODO - replace this with a queue/notification system
-            if state.has_changed(last_version):
-                await websocket.send_json(make_payload())
-                last_version = state.version
-            else:
-                # TODO - hack
-                if time.time() - last_ping >= 5:
-                    await websocket.send_json(make_payload(include_message=False))
-                    last_ping = time.time()
-            await asyncio.sleep(0.25)
-        except WebSocketDisconnect:
-            break
-    if sign:
-        print('Sign has disconnected')
-        state.remove_sign_client(websocket)
-        state.version += 1
