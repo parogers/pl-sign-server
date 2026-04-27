@@ -73,7 +73,7 @@ function useWebSocket(url: string)
 const { lastSocketMessage } = useWebSocket(`${getServerUrl()}/ws/`);
 
 watch(lastSocketMessage, () => {
-    if (lastSocketMessage.value?.message) {
+    if (lastSocketMessage.value?.messages) {
         preview.length = 0;
         preview.push(...<string[]>lastSocketMessage.value.messages);
     }
@@ -107,6 +107,12 @@ function isSubmitEnabled() {
         lastMessage.value !== message.value ||
         lastName.value !== name.value
     );
+}
+
+function onDelete(id) {
+    fetch(`${getServerUrl()}/message/${id}`, {
+        method: 'DELETE',
+    });
 }
 </script>
 
@@ -150,7 +156,10 @@ function isSubmitEnabled() {
 
         <div class="preview">
             <p v-if="preview.length === 0">&nbsp;</p>
-            <p v-for="message in preview">{{ message }}</p>
+            <div v-for="message in preview" class="message-box">
+                <p>[{{ message.name || 'anon' }}]: {{ message.content }}</p>
+                <button @click="onDelete(message.id)">&Cross;</button>
+            </div>
         </div>
     </main>
 </template>
@@ -194,7 +203,6 @@ textarea {
 }
 
 .preview {
-    font-size: x-large;
     width: 100%;
     border: solid 1px gray;
     padding: 0.75em;
@@ -208,12 +216,34 @@ textarea {
     border-radius: 0.25em;
 }
 
+.preview p {
+    font-size: x-large;
+}
+
 .preview p:first-of-type {
     margin-top: 0;
 }
 
 .preview p:last-of-type {
     margin-bottom: 0;
+}
+
+.preview .message-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.preview button {
+    font-size: xx-large;
+    font-weight: bold;
+    padding: 0.1em 0.25em;
+    margin: 0;
+    background: none;
+    border: none;
+    outline: none;
+    box-shadow: none;
+    color: white;
 }
 
 main {

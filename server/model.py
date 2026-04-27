@@ -36,6 +36,13 @@ class State:
         self.version += 1
         return msg
 
+    def remove_message(self, client_id):
+        try:
+            del self.messages_by_client_id[client_id]
+            self.version += 1
+        except KeyError:
+            pass
+
     def has_changed(self, old_version):
         return self.version != old_version
 

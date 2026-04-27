@@ -30,8 +30,7 @@ def make_payload(include_message=True):
         'sign_connected' : bool(State.state.sign_clients),
     }
     if include_message:
-        def _fmt_message(client_id):
-            msg = State.state.messages_by_client_id[client_id]
+        def _fmt_message(msg):
             if msg.client_name:
                 content = f'{msg.client_name} says: {msg.content}'
             else:
@@ -39,15 +38,18 @@ def make_payload(include_message=True):
             return content
 
         messages = [
-            _fmt_message(client_id)
+            State.state.messages_by_client_id[client_id]
             for client_id in reversed(sorted(
                 State.state.messages_by_client_id,
                 key=lambda client_id: State.state.messages_by_client_id[client_id].timestamp
             ))
         ]
-        payload['messages'] = [msg for msg in messages]
+        payload['messages'] = [
+            make_message_payload(msg)
+            for msg in messages
+        ]
         payload['message'] = ''.join([
-            f'{msg}             '
+            f'{_fmt_message(msg)}             '
             for msg in messages
         ])
         # # Delay, scroll up, scroll left for each message
@@ -56,6 +58,20 @@ def make_payload(include_message=True):
         #     for msg in messages
         # ])
     return payload
+
+
+@router.delete('/message/{id}')
+def delete_msg(id: str):
+    State.state.remove_message(id)
+    return {}
+
+
+@router.get("/message/")
+def index():
+    return [
+        make_message_payload(msg)
+        for msg in State.state.messages_by_client_id.values()
+    ]
 
 
 @router.get("/")
