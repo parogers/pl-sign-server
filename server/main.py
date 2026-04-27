@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 @dataclass
 class Message:
-    message_id: int
+    id: int
     client_id: int
     client_name: str
     content: str
@@ -31,14 +31,16 @@ class State:
         self.messages_by_client_id = {}
 
     def set_message(self, msg, name, client_id):
-        self.messages_by_client_id[client_id] = Message(
-            message_id=client_id,
+        msg = Message(
+            id=client_id,
             client_id=client_id,
             client_name=name,
             content=msg,
             timestamp=time.time(),
         )
+        self.messages_by_client_id[client_id] = msg
         self.version += 1
+        return msg
 
     def has_changed(self, old_version):
         return self.version != old_version
@@ -81,17 +83,25 @@ def index():
 
 @app.post('/message/')
 def post_message(message: PostMessage):
-    state.set_message(
+    msg = state.set_message(
         msg=message.content,
         client_id=message.client_id,
         name=message.name,
     )
-    return message
+    return make_message_payload(msg)
 
 
-@app.get('/message/')
-def get_message():
-    return ''
+# @app.get('/message/')
+# def get_message():
+#     return ''
+
+
+def make_message_payload(message: Message):
+    return {
+        "id" : message.id,
+        "name" : message.client_name,
+        "content" : message.content,
+    }
 
 
 def make_payload(include_message=True):
