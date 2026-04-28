@@ -6,12 +6,18 @@ const SERVER_PORT = 8000;
 const MAX_MESSAGE_LEN = 50;
 const MAX_NAME_LEN = 10;
 
+type Message = {
+    content: string,
+    name: string,
+    id: number,
+};
+
 const isConnected = ref(false);
 const isSignConnected = ref(false);
-const message = ref('');
-const lastMessage = ref('');
+const message = ref<string>('');
+const lastMessage = ref<string>('');
 const lastName = ref('');
-const preview = reactive<string[]>([]);
+const preview = reactive<Message[]>([]);
 const clientID = ref('');
 const name = ref('');
 
@@ -75,7 +81,7 @@ const { lastSocketMessage } = useWebSocket(`${getServerUrl()}/ws/`);
 watch(lastSocketMessage, () => {
     if (lastSocketMessage.value?.messages) {
         preview.length = 0;
-        preview.push(...<string[]>lastSocketMessage.value.messages);
+        preview.push(...<Message[]>lastSocketMessage.value.messages);
     }
     if ('sign_connected' in lastSocketMessage.value) {
         isSignConnected.value = !!lastSocketMessage.value.sign_connected;
@@ -109,7 +115,7 @@ function isSubmitEnabled() {
     );
 }
 
-function onDelete(id) {
+function onDelete(id: number) {
     fetch(`${getServerUrl()}/message/${id}`, {
         method: 'DELETE',
     });
